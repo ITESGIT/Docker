@@ -1,0 +1,128 @@
+---
+- hosts: all
+  become: yes
+  become_method: su
+  tasks:
+#    - name: yum install open-vm-tools
+#      shell: yum install open-vm-tools
+    - name: Install net-tools
+      shell: yum -y install net-tools
+
+    - name: Install net-tools
+      shell: yum -y install net-tools
+
+    - name: yum install subscription-manager
+      shell: yum -y install subscription-manager
+  
+#    - name: Add Katello Repo
+#      shell: yum install -y http://fedorapeople.org/groups/katello/releases/yum/2.4/client/RHEL/7Server/x86_64/katello-client-repos-latest.rpm
+
+    #- name: yum install katello-agent
+    #  shell: yum -y  install katello-agent
+ 
+    - name: install Satellite Repo
+      yum:
+       name: http://ites-app005.ites.local/pub/katello-ca-consumer-latest.noarch.rpm
+       state: present
+
+    - redhat_subscription:
+        state: present
+        activationkey: Centos 7
+        org_id: Default_Organization
+        pool: '^(2c90809a5e2e725d015e2e87bf35000d|2c90809a5e2e725d015e2e8578470006)$'
+
+    - name: net-tools will be  installed
+      yum: name=net-tools state=latest
+    - name: sssd will be installed
+      yum: name=sssd state=latest
+    - name: screen will be installed
+      yum: name=screen state=latest
+    - name: oddjob-mkhomedir will be installed
+      yum: name=oddjob-mkhomedir state=latest
+    - name: net-tools will be  installed
+      yum: name=net-tools state=latest
+    - name: docker will be  installed
+      yum: name=docker state=latest
+    - name: docker-registry will be  installed
+      yum: name=docker-registry state=latest
+    - name: device-mapper-libs will be  installed
+      yum: name=device-mapper-libs state=latest
+    - name: Device-mapper-event-libs will be  installed
+      yum: name=device-mapper-event-libs state=latest
+    - name: Git-core will be installed
+      yum: name=git-core state=latest
+    - name: Firewalld will be installed
+      yum: name=firewalld state=latest
+    - service: name=firewalld  enabled=yes
+    - name: Enable firewalld
+      service: name=firewalld state=started enabled=yes
+    - name: Enable Docker.Service
+      service: name=docker.service state=started enabled=yes
+    #- name: Restart Docker 
+    #  service: name=Docker state=restarted
+    - firewalld:
+        service: http
+        permanent: true
+        state: enabled
+    - name: Restart firewalld
+      service: name=firewalld state=restarted
+
+    - firewalld:
+        service: http
+        permanent: true
+        state: enabled
+
+
+    - name: add repository
+      get_url:
+       url: https://download.docker.com/linux/centos/docker-ce.repo
+       dest: /etc/yum.repos.d/docker-ce.repo
+    - name: Install docker
+      yum: name=docker state=present
+
+    - name: Update device mapper to avoid errors on docker start
+      yum: name=device-mapper-event-libs state=latest
+
+    - name: Enable and start docker service
+      systemd:
+       name: docker
+       enabled: yes
+       state: started
+    - name: Creates directory
+      file:
+        path: /opt/rh/rh-php70/root/usr/bin
+        state: directory
+       #owner: www-data
+       #group: www-data
+        mode: 0775
+        recurse: yes
+    - name: Creates directory
+      file:
+        path: /opt/app-root/src/bin
+        state: directory
+       #owner: www-data
+       #group: www-data
+        mode: 0775
+        recurse: yes
+
+    - name: Download and unpack source-to-image
+      unarchive:
+        src: https://github.com/openshift/source-to-image/releases/download/v1.1.7/source-to-image-v1.1.7-226afa1-linux-amd64.tar.gz
+        dest: /usr/local/bin/
+        copy: no
+
+    #- name: Copy s2i to /usr/local/bin
+    #  file:
+    #   src: /tmp/s2i
+    #   dest: /usr/local/bin/
+    #   owner: 'root'
+    #   group: 'root'
+    #   mode: 0775
+
+    - name: Pulls docker images PHP
+      shell: /usr/bin/docker pull ites-app005.ites.local:5000/default_organization-library-centos_7-container-apache_2_4_with_php_7_0:latest
+    - name: Compile via S2i
+      shell: s2i build  https://github.com/sclorg/s2i-php-container.git   ites-app005.ites.local:5000/default_organization-library-centos_7-container-apache_2_4_with_php_7_0:latest  php7-apatche-via-ansible -e PATH=/opt/app-root/src/bin:/opt/app-root/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/rh/rh-php70/root/usr/bin HOME=/opt/app-root/src         BASH_ENV=/opt/app-root/etc/scl_enable           ENV=/opt/app-root/etc/scl_enable         PROMPT_COMMAND=. /opt/app-root/etc/scl_enable
+
+    - name: Pulls docker images PHP
+      shell: docker run -d --restart=always --name php7-apatche-via-ansible  -p 8080:8080 -v /opt/app-root/src/:/opt/app-root/src/  php7-apatche-via-ansible

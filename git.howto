@@ -1,0 +1,43 @@
+git init
+git add README.md
+git add .
+git commit -m "first commit"
+git remote add origin https://github.com/ITESGIT/Docker.git 
+git push --force origin master
+
+git status
+git checkout master
+git add --all folder/ worked better for me than me than git add folder/*
+
+# To remove a remote branch from the server:
+git push origin --delete new
+
+# To remove a file local and remote 
+git rm --cached bash.sh
+git status
+git commit -m "remove bash.sh"
+git push
+
+You can see all branches created by using :
+
+$ git branch
+
+
+######  GitHub - Delete commits history with git commands
+# Clone the project, e.g. `myproject` is my project repository:
+git clone https://github/heiswayi/myproject.git
+
+# Delete the `.git` folder:
+rm -rf .git
+
+# Now, re-initialize the repository:
+git init
+git remote add origin https://github.com/ITESGIT/Docker.git
+git remote -v
+
+# Add all the files and commit the changes:
+git add --all
+git commit -am "Initial commit"
+
+# Force push update to the master branch of our project repository:
+git push -f origin master
